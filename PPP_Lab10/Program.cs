@@ -27,7 +27,7 @@ namespace PPP_Lab10
             Console.WriteLine($"Время создания словаря с пользователями и их рейтингом: {stopwatch.ElapsedMilliseconds} мс");
 
             stopwatch.Start();
-            var task1 = taskManager.CreateUsersArrayInParallelAsync(9000000, 1);
+            var task1 = taskManager.CreateUsersArrayInParallelAsync(1000000, 1);
 
             var users = await task1;
 
@@ -35,13 +35,13 @@ namespace PPP_Lab10
             Console.WriteLine($"Время создания массива пользователей: {stopwatch.ElapsedMilliseconds} мс");
 
             stopwatch.Start();
-            users = TaskManager.MergeSortByField(users, User.OrderByFirstNameLeft);
+            users = await TaskManager.MergeSortByField(users, User.OrderByFirstNameLeft);
 
             stopwatch.Stop();
             Console.WriteLine($"Время сортировки слиянием по именам против алфавитного порядка: {stopwatch.ElapsedMilliseconds} мс");
 
             stopwatch.Start();
-            users = TaskManager.MergeSortByField(users, User.OrderByDescendingNameLeft);
+            users = await TaskManager.MergeSortByField(users, User.OrderByDescendingNameLeft);
 
             stopwatch.Stop();
             Console.WriteLine($"Время сортировки слиянием по именам за алфавитным порядком: {stopwatch.ElapsedMilliseconds} мс");

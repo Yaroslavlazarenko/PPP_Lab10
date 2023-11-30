@@ -23,12 +23,12 @@ namespace PPP_Lab10
         /// <exception cref="ArgumentOutOfRangeException">Выбрасывается, если userCount или threadCount меньше или равны нулю.</exception>
         public async Task CreateUsersRatingDictionaryInParallelAsync(RatingSystem ratingSystem, int userCount, int threadCount)
         {
-            if(ratingSystem is null)
+            if (ratingSystem is null)
             {
-                throw new ArgumentNullException("rating system при создании словаря пользователей не может быть null");
+                throw new ArgumentNullException(nameof(ratingSystem), "rating system при создании словаря пользователей не может быть null");
             }
 
-            if (ratingSystem is null || userCount <= 0 || threadCount <= 0)
+            if (userCount <= 0 || threadCount <= 0)
             {
                 throw new ArgumentOutOfRangeException("userCount и threadCount должны быть больше нуля");
             }
@@ -49,10 +49,7 @@ namespace PPP_Lab10
                     end = (i + 1) * usersPerThread;
                 }
 
-                tasks[i] = Task.Run(() =>
-                {
-                    CreateUsersAndRatingRange(ratingSystem, start, end);
-                });
+                tasks[i] = CreateUsersAndRatingRange(ratingSystem, start, end);
             }
 
             await Task.WhenAll(tasks);
@@ -66,7 +63,7 @@ namespace PPP_Lab10
         /// <param name="end">Конечный индекс диапазона создания пользователей.</param>
         /// <exception cref="ArgumentNullException">Выбрасывается, если переданная система рейтингов равна null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Выбрасывается, если значения start и end некорректны.</exception>
-        public static void CreateUsersAndRatingRange(RatingSystem ratingSystem, int start, int end)
+        public static Task CreateUsersAndRatingRange(RatingSystem ratingSystem, int start, int end)
         {
             if (ratingSystem == null)
             {
@@ -86,6 +83,8 @@ namespace PPP_Lab10
             {
                 ratingSystem.AddOrUpdateRating(new User(i, Utils.GetRandomFirstName(), Utils.GetRandomLastName(), Utils.GetRandomAge(maxAge)), Utils.GetRandomRating(minRatingValue, maxRatigValue));
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -119,15 +118,13 @@ namespace PPP_Lab10
                     end = (i + 1) * usersPerThread;
                 }
 
-                tasks[i] = Task.Run(() =>
-                {
-                    CreateUserRange(users, start, end);
-                });
+                tasks[i] = CreateUserRange(users, start, end);
             }
 
             await Task.WhenAll(tasks);
             return users;
         }
+
 
         /// <summary>
         /// Сортирует массив пользователей методом слияния (Merge Sort) на основе заданного делегата сравнения.
@@ -137,7 +134,7 @@ namespace PPP_Lab10
         /// <returns>Отсортированный массив пользователей.</returns>
         /// <exception cref="ArgumentNullException">Выбрасывается, если переданный массив пользователей или делегат сравнения равны null.</exception>
         /// <exception cref="ArgumentException">Выбрасывается, если массив пользователей пуст или содержит только один элемент.</exception>
-        private static void CreateUserRange(User[] users, int start, int end)
+        private static Task CreateUserRange(User[] users, int start, int end)
         {
             if (users is null)
             {
@@ -155,6 +152,8 @@ namespace PPP_Lab10
             {
                   users[i] = new User(i, Utils.GetRandomFirstName(), Utils.GetRandomLastName(), Utils.GetRandomAge(maxAge));
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -165,14 +164,14 @@ namespace PPP_Lab10
         /// <returns>Отсортированный массив пользователей.</returns>
         /// <exception cref="ArgumentNullException">Выбрасывается, если переданный массив пользователей или делегат сравнения равны null.</exception>
         /// <exception cref="ArgumentException">Выбрасывается, если массив пользователей пуст или содержит только один элемент.</exception>
-        public static User[] MergeSortByField(User[] users, CompareDelegate compareDelegate)
+        public static async Task<User[]> MergeSortByField(User[] users, CompareDelegate compareDelegate)
         {
             if (users is null || compareDelegate is null)
             {
                 throw new ArgumentNullException(nameof(users), "Массив пользователей не может быть null");
             }
 
-            if(users.Length == 0)
+            if (users.Length == 0)
             {
                 throw new ArgumentException("Массив пользователей пуст, невозможно выполнить сортировку", nameof(users));
             }
@@ -182,7 +181,7 @@ namespace PPP_Lab10
                 return users;
             }
 
-            return MergeSort(users, compareDelegate);
+            return await MergeSort(users, compareDelegate);
         }
 
         /// <summary>
@@ -193,20 +192,14 @@ namespace PPP_Lab10
         /// <returns>Отсортированный массив пользователей.</returns>
         /// <exception cref="ArgumentNullException">Выбрасывается, если переданный массив пользователей равен null.</exception>
         /// <exception cref="ArgumentException">Выбрасывается, если массив пользователей пуст.</exception>
-        private static User[] MergeSort(User[] users, CompareDelegate compareDelegate)
+        private static async Task<User[]> MergeSort(User[] users, CompareDelegate compareDelegate)
         {
             if (users is null)
             {
                 throw new ArgumentNullException("Массив пользователей не может быть null");
             }
 
-            if (users.Length == 0)
-            {
-                throw new ArgumentException("Массив пользователей пуст, невозможно выполнить сортировку");
-            }
-
-
-            if (users.Length == 1)
+            if (users.Length <= 1)
             {
                 return users;
             }
@@ -215,12 +208,12 @@ namespace PPP_Lab10
             User[] left = users.Take(middle).ToArray();
             User[] right = users.Skip(middle).ToArray();
 
-            Task<User[]> leftSort = Task.Run(() => MergeSort(left, compareDelegate));
-            Task<User[]> rightSort = Task.Run(() => MergeSort(right, compareDelegate));
+            Task<User[]> leftSortTask = MergeSort(left, compareDelegate);
+            Task<User[]> rightSortTask = MergeSort(right, compareDelegate);
 
-            Task.WaitAll(leftSort, rightSort);
+            await Task.WhenAll(leftSortTask, rightSortTask);
 
-            return Merge(leftSort.Result, rightSort.Result, compareDelegate);
+            return Merge(await leftSortTask, await rightSortTask, compareDelegate);
         }
 
         /// <summary>
